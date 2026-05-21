@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Financeiro Avançado</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
+
+    <style>
+        :root {
+            --bg-principal: #0d0e12;
+            --bg-card: rgba(22, 25, 35, 0.65);
+            --bg-sidebar: rgba(16, 18, 27, 0.75);
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --roxo-neon: #9d4edf;
+            --roxo-neon-glow: rgba(157, 78, 223, 0.4);
+            --verde-esmeralda: #00e676;
+            --verde-glow: rgba(0, 230, 118, 0.3);
+            --vermelho-saida: #ff1744;
+            --texto-prai: #f5f6fa;
+            --texto-sec: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-principal);
+            color: var(--texto-prai);
+            min-height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* --- ARQUITETURA DE PASTAS (SIDEBAR) --- */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-sidebar);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border-glass);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .logo {
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--roxo-neon);
+            text-shadow: 0 0 10px var(--roxo-neon-glow);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .folder-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--texto-sec);
+            letter-spacing: 1px;
+            margin: 20px 0 8px 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--texto-sec);
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+            gap: 10px;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--texto-prai);
+            box-shadow: inset 0 0 5px rgba(255,255,255,0.05);
+        }
+
+        .nav-item.active {
+            background: rgba(157, 78, 223, 0.15);
+            color: var(--roxo-neon);
+            border-left: 3px solid var(--roxo-neon);
+            box-shadow: 0 0 15px var(--roxo-neon-glow);
+        }
+
+        .sub-list {
+            padding-left: 15px;
+        }
+
+        /* Botão Adicionar Categoria */
+        .btn-add-category {
+            background: transparent;
+            border: 1px dashed var(--roxo-neon);
+            color: var(--roxo-neon);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            margin-left: 15px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+        }
+        .btn-add-category:hover {
+            background: var(--roxo-neon);
+            color: #fff;
+            box-shadow: 0 0 10px var(--roxo-neon-glow);
+        }
+
+        /* --- PAINEL PRINCIPAL --- */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            height: 100vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .header-dash {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* CARDS DE APRESENTAÇÃO */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+
+        .card-title {
+            font-size: 0.85rem;
+            color: var(--texto-sec);
+            margin-bottom: 10px;
+        }
+        .card-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+        .card-value.entrada { color: var(--verde-esmeralda); text-shadow: 0 0 10px var(--verde-glow); }
+        .card-value.saida { color: var(--vermelho-saida); }
+
+        /* SEÇÃO DE DADOS (GRÁFICOS E FORMULÁRIO) */
+        .dashboard-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-section { grid-template-columns: 1fr; }
+        }
+
+        /* FORMULÁRIO E TABELAS estilo Glass */
+        .glass-panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--border-glass);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Formulário */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--texto-sec);
+            margin-bottom: 6px;
+        }
+        .form-control {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-glass);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: #fff;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: var(--roxo-neon);
+            box-shadow: 0 0 10px var(--roxo-neon-glow);
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--roxo-neon);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px var(--roxo-neon-glow);
+        }
+        .btn-submit:hover {
+            background: #b166f0;
+            box-shadow: 0 0 20px var(--roxo-neon-glow);
+        }
+
+        /* Tabela */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+        th, td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-glass);
+            font-size: 0.9rem;
+        }
+        th {
+            color: var(--texto-sec);
+            font-weight: 500;
+        }
+
+        /* Animação de surgimento das Linhas (Fade-in) */
+        @keyframes fadeInRow {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-row {
+            animation: fadeInRow 0.5s ease forwards;
+        }
+
+        .val-entrada { color: var(--verde-esmeralda); font-weight: 600; }
+        .val-saida { color: var(--vermelho-saida); font-weight: 600; }
+
+        .badge-cat {
+            background: rgba(255,255,255,0.08);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="logo">
+            <span class="material-symbols-rounded">equalizer</span> Finanças BI
+        </div>
+
+        <div class="folder-title"><span class="material-symbols-rounded">folder_open</span> Visão Geral</div>
+        <div class="nav-item active" onclick="filtrar('geral', this)">
+            <span class="material-symbols-rounded">dashboard</span> Dashboard Geral
+        </div>
+
+        <div class="folder-title"><span class="material-symbols-rounded">folder_open</span> Meses</div>
+        <div class="sub-list" id="lista-meses">
+            </div>
+
+        <div class="folder-title"><span class="material-symbols-rounded">folder_open</span> Categorias</div>
+        <div class="sub-list" id="lista-categorias">
+            </div>
+        <button class="btn-add-category" onclick="novaCategoria()">
+            <span class="material-symbols-rounded">add</span> Nova Categoria
+        </button>
+    </div>
+
+    <div class="main-content">
+        <div class="header-dash">
+            <div>
+                <h1 id="titulo-contexto">Dashboard Geral</h1>
+                <p style="color: var(--texto-sec); font-size: 0.85rem;" id="subtitulo-contexto">Análise consolidada de todos os registros</p>
+            </div>
+        </div>
+
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-title">Entradas Mensais</div>
+                <div class="card-value entrada" id="card-entradas">R$ 0,00</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Saídas Mensais</div>
+                <div class="card-value saida" id="card-saidas">R$ 0,00</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Saldo Balanço</div>
+                <div class="card-value" id="card-saldo">R$ 0,00</div>
+            </div>
+        </div>
+
+        <div class="dashboard-section">
+            <div class="glass-panel" id="container-grafico">
+                <div class="panel-title">
+                    <span class="material-symbols-rounded" style="color: var(--roxo-neon)">bar_chart</span> Distribuição de Gastos
+                </div>
+                <div style="position: relative; height:300px; width:100%">
+                    <canvas id="meuGrafico"></canvas>
+                </div>
+            </div>
+
+            <div class="glass-panel">
+                <div class="panel-title">
+                    <span class="material-symbols-rounded" style="color: var(--roxo-neon)">add_box</span> Nova Transação
+                </div>
+                <form id="finance-form" onsubmit="salvarTransacao(event)">
+                    <div class="form-group">
+                        <label>Nome do Lançamento</label>
+                        <input type="text" id="tx-nome" class="form-control" placeholder="Ex: Aluguel, Salário" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Valor (R$)</label>
+                        <input type="number" step="0.01" id="tx-valor" class="form-control" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo</label>
+                        <select id="tx-tipo" class="form-control">
+                            <option value="Entrada">Entrada</option>
+                            <option value="Saída">Saída</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Mês de Competência</label>
+                        <select id="tx-mes" class="form-control"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Categoria</label>
+                        <select id="tx-categoria" class="form-control"></select>
+                    </div>
+                    <button type="submit" class="btn-submit">Salvar Lançamento</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="glass-panel">
+            <div class="panel-title">
+                <span class="material-symbols-rounded" style="color: var(--roxo-neon)">list_alt</span> Registros de Lançamentos
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Mês</th>
+                            <th>Categoria</th>
+                            <th>Tipo</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-corpo">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dados de inicialização do sistema (Banco de dados Local em Memória)
+        const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+        let categorias = ["Moradia", "Aluguel", "Conta Água", "Internet", "Conta de Luz"];
+        
+        let transacoes = [
+            { nome: "Salário Base", mes: "Janeiro", categoria: "Moradia", tipo: "Entrada", valor: 5500.00 },
+            { nome: "Aluguel Ap", mes: "Janeiro", categoria: "Aluguel", tipo: "Saída", valor: 1200.00 },
+            { nome: "Conta de Energia", mes: "Janeiro", categoria: "Conta de Luz", tipo: "Saída", valor: 250.00 },
+            { nome: "Internet Fibra", mes: "Fevereiro", categoria: "Internet", tipo: "Saída", valor: 120.00 },
+            { nome: "Freelance Design", mes: "Fevereiro", categoria: "Moradia", tipo: "Entrada", valor: 1500.00 }
+        ];
+
+        let filtroAtual = { tipo: 'geral', valor: '' };
+        let chartInstance = null;
+
+        // Inicializador do Sistema
+        window.onload = function() {
+            renderizarMenus();
+            renderizarSeletoresForm();
+            atualizarDashboard();
+        };
+
+        function renderizarMenus() {
+            // Renderiza Subpastas de Meses
+            const listaMeses = document.getElementById('lista-meses');
+            listaMeses.innerHTML = meses.map(m => `
+                <div class="nav-item" onclick="filtrar('mes', '${m}', this)">
+                    <span class="material-symbols-rounded">calendar_month</span> ${m}
+                </div>
+            `).join('');
+
+            // Renderiza Subpastas de Categorias
+            const listaCat = document.getElementById('lista-categorias');
+            listaCat.innerHTML = categorias.map(c => `
+                <div class="nav-item" onclick="filtrar('categoria', '${c}', this)">
+                    <span class="material-symbols-rounded">label</span> ${c}
+                </div>
+            `).join('');
+        }
+
+        function renderizarSeletoresForm() {
+            document.getElementById('tx-mes').innerHTML = meses.map(m => `<option value="${m}">${m}</option>`).join('');
+            document.getElementById('tx-categoria').innerHTML = categorias.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+
+        function novaCategoria() {
+            const nomeCat = prompt("Digite o nome da nova Categoria:");
+            if (nomeCat && !categorias.includes(nomeCat)) {
+                categorias.push(nomeCat);
+                renderizarMenus();
+                renderizarSeletoresForm();
+            }
+        }
+
+        // Regra de Filtro estilo Power BI slicer
+        function filtrar(tipo, valor, elemento) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            if(elemento) elemento.classList.add('active');
+
+            filtroAtual.tipo = tipo;
+            filtroAtual.valor = valor;
+
+            const titulo = document.getElementById('titulo-contexto');
+            const subtitulo = document.getElementById('subtitulo-contexto');
+
+            if (tipo === 'geral') {
+                titulo.innerText = "Dashboard Geral";
+                subtitulo.innerText = "Análise consolidada de todos os registros";
+            } else {
+                titulo.innerText = `Filtro: ${valor}`;
+                subtitulo.innerText = `Exibindo informações exclusivas vinculadas a ${valor}`;
+            }
+
+            atualizarDashboard();
+        }
+
+        function atualizarDashboard() {
+            // Aplica filtro de dados
+            let dadosFiltrados = transacoes.filter(t => {
+                if (filtroAtual.tipo === 'mes') return t.mes === filtroAtual.valor;
+                if (filtroAtual.tipo === 'categoria') return t.categoria === filtroAtual.valor;
+                return true; // Geral
+            });
+
+            // Cálculos dos Cards
+            let entradas = 0;
+            let saidas = 0;
+
+            dadosFiltrados.forEach(t => {
+                if (t.tipo === 'Entrada') entradas += t.valor;
+                else saidas += t.valor;
+            });
+
+            let saldo = entradas - saidas;
+
+            // Atualiza interface com formatação de moeda
+            document.getElementById('card-entradas').innerText = entradas.toLocaleString('pt-br',{style: 'currency', currency: 'BRL'});
+            document.getElementById('card-saidas').innerText = saidas.toLocaleString('pt-br',{style: 'currency', currency: 'BRL'});
+            
+            const cardSaldo = document.getElementById('card-saldo');
+            cardSaldo.innerText = saldo.toLocaleString('pt-br',{style: 'currency', currency: 'BRL'});
+            cardSaldo.style.color = saldo >= 0 ? 'var(--verde-esmeralda)' : 'var(--vermelho-saida)';
+            cardSaldo.style.textShadow = saldo >= 0 ? 'var(--verde-glow) 0px 0px 10px' : 'none';
+
+            // Recarrega Tabela e Gráficos
+            renderizarTabela(dadosFiltrados);
+            renderizarGrafico(entradas, saidas);
+        }
+
+        function renderizarTabela(dados) {
+            const corpo = document.getElementById('tabela-corpo');
+            corpo.innerHTML = "";
+
+            dados.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.className = "animate-row"; // Gatilho de animação CSS
+                
+                tr.innerHTML = `
+                    <td>${t.nome}</td>
+                    <td>${t.mes}</td>
+                    <td><span class="badge-cat">${t.categoria}</span></td>
+                    <td>${t.tipo}</td>
+                    <td class="${t.tipo === 'Entrada' ? 'val-entrada' : 'val-saida'}">
+                        ${t.tipo === 'Entrada' ? '+' : '-'} R$ ${t.valor.toFixed(2)}
+                    </td>
+                `;
+                corpo.appendChild(tr);
+            });
+        }
+
+        function renderizarGrafico(entradas, saidas) {
+            const ctx = document.getElementById('meuGrafico').getContext('2d');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            // Design do Gráfico estilo Power BI Dark
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Entradas', 'Saídas'],
+                    datasets: [{
+                        label: 'Valores Correntes',
+                        data: [entradas, saidas],
+                        backgroundColor: ['#00e676', '#ff1744'],
+                        borderColor: ['#00e676', '#ff1744'],
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Ação do Formulário Inteligente
+        function salvarTransacao(event) {
+            event.preventDefault();
+
+            const novaTx = {
+                nome: document.getElementById('tx-nome').value,
+                valor: parseFloat(document.getElementById('tx-valor').value),
+                tipo: document.getElementById('tx-tipo').value,
+                mes: document.getElementById('tx-mes').value,
+                categoria: document.getElementById('tx-categoria').value
+            };
+
+            transacoes.unshift(novaTx); // Adiciona no início da lista para ver o efeito imediato
+            document.getElementById('finance-form').reset();
+            renderizarSeletoresForm(); // Reseta estados internos
+            
+            atualizarDashboard();
+        }
+    </script>
+</body>
+</html>
